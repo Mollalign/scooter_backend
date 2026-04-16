@@ -1,0 +1,252 @@
+# =====================================================
+# Python
+# =====================================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# =====================================================
+# Virtual Environments
+# =====================================================
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+
+# =====================================================
+# Environment Variables (IMPORTANT: Never commit!)
+# =====================================================
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+!.env.example
+
+# =====================================================
+# IDE / Editor
+# =====================================================
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm / JetBrains
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+
+# Cursor
+.cursor/
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# =====================================================
+# Testing & Coverage
+# =====================================================
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# =====================================================
+# Database
+# =====================================================
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+
+# PostgreSQL
+*.pgsql
+
+# =====================================================
+# Alembic
+# =====================================================
+# Keep versions folder but ignore generated files if needed
+# alembic/versions/*.pyc
+
+# =====================================================
+# Logs
+# =====================================================
+logs/
+*.log
+log/
+*.log.*
+
+# =====================================================
+# Docker
+# =====================================================
+# Ignore docker-compose override for local development
+docker-compose.override.yml
+
+# =====================================================
+# OS Generated Files
+# =====================================================
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.AppleDouble
+.LSOverride
+Icon
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =====================================================
+# Project Specific
+# =====================================================
+
+# Uploaded files (if storing locally)
+uploads/
+media/
+static/uploads/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+
+# =====================================================
+# Secrets & Credentials (NEVER COMMIT!)
+# =====================================================
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+credentials/
+service-account*.json
+
+# =====================================================
+# Documentation Build
+# =====================================================
+docs/_build/
+site/
+
+# =====================================================
+# Jupyter Notebooks
+# =====================================================
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+*.ipynb_checkpoints
+
+# =====================================================
+# mypy / Type Checking
+# =====================================================
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# =====================================================
+# Ruff / Linting
+# =====================================================
+.ruff_cache/
+
+# =====================================================
+# Package managers
+# =====================================================
+# Poetry
+poetry.lock
+
+# Pipenv
+Pipfile.lock
+
+# =====================================================
+# Celery
+# =====================================================
+celerybeat-schedule
+celerybeat.pid
+
+# =====================================================
+# Redis dump
+# =====================================================
+dump.rdb
