@@ -1,9 +1,15 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.core.database import (
+    create_db_extensions,
+    check_db_connection,
+    close_db_connection,
+)
 from app.core.exception_handlers import register_exception_handlers
 from app.modules.auth.router import router as auth_router
 from app.modules.users.router import router as users_router
@@ -13,12 +19,16 @@ from app.modules.payments.router import router as payments_router
 from app.modules.wallet.router import router as wallet_router
 from app.modules.admin.router import router as admin_router
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # TODO: start background job scheduler on startup
+    await create_db_extensions()
+    logger.info("Application startup complete.")
     yield
-    # TODO: shut down scheduler on shutdown
+    await close_db_connection()
+    logger.info("Application shutdown complete.")
 
 
 app = FastAPI(
@@ -55,4 +65,6 @@ async def health_check():
 
 @app.get("/readiness", tags=["Health"])
 async def readiness_check():
-    return {"status": "ready", "database": "connected"}
+    db_ok = await check_db_connection()
+    status = "ready" if db_ok else "degraded"
+    return {"status": status, "database": "connected" if db_ok else "unreachable"}
