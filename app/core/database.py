@@ -17,7 +17,6 @@ from sqlalchemy import text
 from typing import AsyncGenerator
 
 from app.core.config import settings
-from app.models.base import Base
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +117,8 @@ async def init_db() -> None:
     Create all tables (DEV ONLY).
     In production, use Alembic migrations instead.
     """
+    from app.models import Base  # local import to avoid circular init
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Database tables created (dev mode).")
@@ -125,6 +126,8 @@ async def init_db() -> None:
 
 async def drop_all_tables() -> None:
     """Drop all tables (DEV ONLY — destructive)."""
+    from app.models import Base
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
     logger.warning("All tables dropped.")

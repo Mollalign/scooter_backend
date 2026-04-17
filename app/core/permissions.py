@@ -1,37 +1,51 @@
+"""
+Role-based permission guards for staff endpoints.
+
+Usage:
+
+    @router.post("/scooters", dependencies=[Depends(require_staff_roles(
+        StaffRole.FLEET_MANAGER, StaffRole.COMPANY_ADMIN, StaffRole.SUPER_ADMIN
+    ))])
+"""
+
+from typing import Callable, Iterable
+
 from fastapi import Depends, HTTPException, status
 
-from app.core.dependencies import get_current_verified_user
-from app.models.user import User
+from app.core.deps import get_current_staff
+from app.core.enums import StaffRole
+from app.models.staff import Staff
 
 
-async def require_owner(
-    current_user: User = Depends(get_current_verified_user),
-) -> User:
-    if current_user.role not in ("owner", "both", "admin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Owner access required",
-        )
-    return current_user
+def require_staff_roles(*roles: StaffRole) -> Callable[..., Staff]:
+    allowed = {r.value for r in roles}
+
+    async def _dep(current: Staff = Depends(get_current_staff)) -> Staff:
+        if current.role not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient role privileges",
+            )
+        return current
+
+    return _dep
 
 
-async def require_customer(
-    current_user: User = Depends(get_current_verified_user),
-) -> User:
-    if current_user.role not in ("customer", "both", "admin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Customer access required",
-        )
-    return current_user
+def _combo(*roles: StaffRole) -> Iterable[StaffRole]:
+    return roles
 
 
-async def require_admin(
-    current_user: User = Depends(get_current_verified_user),
-) -> User:
-    if current_user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
-    return current_user
+require_super_admin = require_staff_roles(StaffRole.SUPER_ADMIN)
+require_admin = require_staff_roles(StaffRole.COMPANY_ADMIN, StaffRole.SUPER_ADMIN)
+require_fleet_manager = require_staff_roles(
+    StaffRole.FLEET_MANAGER, StaffRole.COMPANY_ADMIN, StaffRole.SUPER_ADMIN
+)
+require_field_operator = require_staff_roles(
+    StaffRole.FIELD_OPERATOR,
+    StaffRole.FLEET_MANAGER,
+    StaffRole.COMPANY_ADMIN,
+    StaffRole.SUPER_ADMIN,
+)
+require_finance = require_staff_roles(
+    StaffRole.FINANCE, StaffRole.COMPANY_ADMIN, StaffRole.SUPER_ADMIN
+)

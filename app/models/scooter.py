@@ -1,55 +1,74 @@
+"""Physical scooter/bike/moped fleet."""
+
 import uuid
 from datetime import datetime
 
 from geoalchemy2 import Geography
-from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, SmallInteger, String, Text, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING
 
+from app.core.enums import ScooterStatus, VehicleType
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
+if TYPE_CHECKING:
+    from app.models.iot import IoTDevice
 
-class Scooter(Base, UUIDMixin, TimestampMixin):
+
+class Scooter(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "scooters"
 
-    owner_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True
-    )
-    title: Mapped[str] = mapped_column(String(200), nullable=False)
-    description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    model: Mapped[str] = mapped_column(String(100), nullable=False)
-    year: Mapped[int] = mapped_column(SmallInteger, nullable=False)
-    license_plate: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
-    sub_city: Mapped[str] = mapped_column(String(100), nullable=False)
-    location: Mapped[str | None] = mapped_column(
-        Geography(geometry_type="POINT", srid=4326), nullable=True
-    )
-    location_description: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    price_per_hour: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
-    price_per_day: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
-    status: Mapped[str] = mapped_column(String(20), nullable=False, default="unlisted")
-    is_approved: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Display code printed on vehicle ("GF-123", "BK-456")
+    code: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
+    qr_code: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
 
-    owner: Mapped["User"] = relationship(back_populates="scooters", lazy="selectin")
-    images: Mapped[list["ScooterImage"]] = relationship(
-        back_populates="scooter", lazy="selectin", cascade="all, delete-orphan"
+    vehicle_type: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+    model_name: Mapped[str | None] = mapped_column(String(80))
+    serial_number: Mapped[str | None] = mapped_column(String(80), unique=True)
+
+    status: Mapped[str] = mapped_column(
+        String(24), default=ScooterStatus.INACTIVE.value, nullable=False, index=True,
     )
 
-
-class ScooterImage(Base, UUIDMixin):
-    __tablename__ = "scooter_images"
-
-    scooter_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("scooters.id", ondelete="CASCADE"), nullable=False
+    # Live telemetry (kept denormalized on the row for fast map queries)
+    location: Mapped[object | None] = mapped_column(
+        Geography(geometry_type="POINT", srid=4326), index=True
     )
-    image_url: Mapped[str] = mapped_column(String(512), nullable=False)
-    is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    sort_order: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=func.now(), server_default=func.now(), nullable=False
+    heading_deg: Mapped[float | None] = mapped_column(Numeric(5, 2))
+    speed_kmh: Mapped[float | None] = mapped_column(Numeric(5, 2))
+    battery_percent: Mapped[int | None] = mapped_column(Integer)
+    range_km: Mapped[float | None] = mapped_column(Numeric(6, 2))
+    last_ping_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+
+    is_locked: Mapped[bool] = mapped_column(default=True, nullable=False)
+
+    parking_zone_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parking_zones.id", ondelete="SET NULL"), index=True,
+    )
+    pricing_plan_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("pricing_plans.id", ondelete="SET NULL"),
     )
 
-    scooter: Mapped["Scooter"] = relationship(back_populates="images")
+    total_rides: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_distance_km: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    last_maintenance_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    iot_device: Mapped["IoTDevice"] = relationship(
+        "IoTDevice", back_populates="scooter", uselist=False, cascade="all, delete-orphan"
+    )
 
-from app.models.user import User  # noqa: E402
+    __table_args__ = (
+        CheckConstraint(
+            f"vehicle_type IN ({', '.join(repr(v.value) for v in VehicleType)})",
+            name="ck_scooters_vehicle_type",
+        ),
+        CheckConstraint(
+            f"status IN ({', '.join(repr(s.value) for s in ScooterStatus)})",
+            name="ck_scooters_status",
+        ),
+        CheckConstraint(
+            "battery_percent IS NULL OR (battery_percent BETWEEN 0 AND 100)",
+            name="ck_scooters_battery_range",
+        ),
+    )
